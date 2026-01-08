@@ -34,6 +34,7 @@ void ExitCritical( uint32_t xReturn );
 void StartFirstTask(void);
 uint32_t *StackInit( uint32_t *pxTopOfStack, TaskFunction_t pxCode,void *pvParameters);
 
+// 0xe000ed04是中断控制和状态寄存器，bit 28是PendSV中断的挂起位，通过触发PendSV异常执行PendSV_Handler()
 #define schedule()\
 *( ( volatile uint32_t * ) 0xe000ed04 ) = 1UL << 28UL
 

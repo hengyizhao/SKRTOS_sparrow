@@ -28,8 +28,8 @@
 
 
 
-#define configSysTickClockHz			( ( unsigned long ) 72000000 )
-#define configTickRateHz			( ( uint32_t ) 1000 )
+#define configSysTickClockHz			( ( unsigned long ) 72000000 ) // 处理器时钟频率
+#define configTickRateHz			( ( uint32_t ) 1000 ) // SysTick频率
 #define configShieldInterPriority 191
 
 
