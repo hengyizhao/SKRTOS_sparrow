@@ -87,6 +87,8 @@ uint8_t mutex_lock(Mutex_Handle mutex,uint32_t Ticks)
         mutex->WaitTable |= (1 << CurrentTcbPriority);//it belongs to the IPC layer,can't use State port!
         TaskDelay(Ticks);
         uint8_t MutexOwnerPriority = GetTaskPriority(mutex->owner);
+        // 如果锁持有者的优先级小于当前任务的优先级，意味着此时出现了优先级反转，高优先级的任务在等待着低优先级的任务释放锁
+        // 通过提高锁持有者的优先级，来让持有锁的任务尽快执行，释放锁，来解决优先级反转的问题
         if( MutexOwnerPriority < CurrentTcbPriority) {
             TableRemove(mutex->owner, Ready);
             PreemptiveCPU(MutexOwnerPriority);
@@ -94,9 +96,13 @@ uint8_t mutex_lock(Mutex_Handle mutex,uint32_t Ticks)
     }
     ExitCritical(xre);
 
+    // 循环等待，直到被唤醒
     while(temp == schedule_count){ }//It loops until the schedule is start.
 
     uint32_t xReturn = EnterCritical();
+    // 阻塞的任务被唤醒的原因有两种：
+    // 1. 阻塞超时，被调度器唤醒，特征是其State为Block
+    // 2. 互斥锁可用，被互斥锁unlock函数唤醒，mutex_unlock()在释放互斥锁之后，会在等待获取互斥锁的任务中唤醒优先级最高的任务，将其从Block和Delay表中移除，加入Ready表，其State为Ready
     //Check whether the wake is due to delay or due to mutex availability
     if( CheckState(CurrentTCB,Block) ){//if true ,the task is Block!
         mutex->WaitTable &= ~(1 << CurrentTcbPriority);
@@ -121,6 +127,7 @@ uint8_t mutex_unlock( Mutex_Handle mutex)
         mutex->WaitTable &= ~(1 << uxPriority );
         TableRemove(taskHandle,Block);
         TableRemove(taskHandle,Delay);
+        // 将其他等待获取互斥锁的优先级最高的任务从Block和Delay表中移除，加入Ready表，在此过程中，如果被唤醒的任务优先级高于当前任务，则当前任务会被挂起，让出CPU给高优先级的任务
         TableAdd(taskHandle, Ready);
     }
     (mutex->value)++;
