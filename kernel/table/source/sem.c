@@ -29,8 +29,8 @@
 
 Class(Semaphore_struct)
 {
-    uint8_t value;
-    uint32_t xBlock;
+    uint8_t value; // 计数器，表示该信号量最多允许多少个任务同时持有该信号量
+    uint32_t xBlock; // 等待任务位图，相应bit位为1表示对应优先级的任务被阻塞
 };
 
 
@@ -60,13 +60,15 @@ uint8_t semaphore_release( Semaphore_Handle semaphore)
     TaskHandle_t CurrentTCB = GetCurrentTCB();
     uint8_t CurrentTcbPriority = GetTaskPriority(CurrentTCB);
 
-    if (semaphore->xBlock) {
-        uint8_t uxPriority =  GetTopTCBIndex(semaphore->xBlock);
+    if (semaphore->xBlock) { // 有其他任务在block等待获取信号量
+        uint8_t uxPriority =  GetTopTCBIndex(semaphore->xBlock); // 阻塞的任务中，优先级更高的任务优先获取信号量
         TaskHandle_t taskHandle = GetTaskHandle(uxPriority);
         semaphore->xBlock &= ~(1 << uxPriority );//it belongs to the IPC layer,can't use State port!
+        // 将其他等待获取信号量的优先级最高的任务从Block和Delay表中移除，加入Ready表，等待调度
         TableRemove(taskHandle,Block);// Also synchronize with the total blocking state
         TableRemove(taskHandle,Delay);
         TableAdd(taskHandle, Ready);
+        // 这里感觉存在问题，在TableAdd()中，将任务加入Ready表后，如果该任务的优先级大于CurrentTcbPriority，会立即调用schedule()进行任务调度，这里的调度逻辑实际上是不需要的，在互斥锁的实现中就没有此处的代码
         if(uxPriority > CurrentTcbPriority){
             schedule();
         }
@@ -96,23 +98,27 @@ uint8_t semaphore_take(Semaphore_Handle semaphore,uint32_t Ticks)
 
     uint8_t volatile temp = schedule_count;
 
-    if(Ticks > 0){
+    if(Ticks > 0){ // 将任务加入Block和Delay表中
         TableAdd(CurrentTCB,Block);
         semaphore->xBlock |= (1 << CurrentTcbPriority);//it belongs to the IPC layer,can't use State port!
-        TaskDelay(Ticks);
+        TaskDelay(Ticks); // TaskDelay将任务添加进Delay表，并设置超时时间
     }
     ExitCritical(xre);
 
+    // 循环等待，直到被唤醒
     while(temp == schedule_count){ }//It loops until the schedule is start.
 
     uint32_t xReturn = EnterCritical();
+    // 阻塞的任务被唤醒的原因有两种：
+    // 1. 阻塞超时，被调度器唤醒，特征是其State为Block
+    // 2. 信号量可用，被信号量释放函数唤醒，在semaphore_release()在释放信号量之后，会在等待获取信号量的任务中唤醒优先级最高的任务，将其从Block和Delay表中移除，加入Ready表，其State为Ready
     //Check whether the wake is due to delay or due to semaphore availability
     if( CheckState(CurrentTCB,Block) ){//if true ,the task is Block!
         semaphore->xBlock &= ~(1 << CurrentTcbPriority);//it belongs to the IPC layer,can't use State port!
-        TableRemove(CurrentTCB,Block);
+        TableRemove(CurrentTCB,Block); // 将该任务从Block表中移除，在CheckTicks中会将该任务从Delay表中移除
         ExitCritical(xReturn);
         return false;
-    }else{
+    }else{ // 获取信号量成功
         (semaphore->value)--;
         ExitCritical(xReturn);
         return true;
