@@ -36,8 +36,8 @@ Class(Queue_struct)
     uint8_t *readPoint;
     uint8_t *writePoint;
     uint8_t MessageNumber;
-    uint32_t SendTable;
-    uint32_t ReceiveTable;
+    uint32_t SendTable; // 因消息队列已满，而阻塞的任务位图
+    uint32_t ReceiveTable; // 因消息队列为空，而阻塞的任务位图
     uint32_t NodeSize;
     uint32_t NodeNumber;
 };
@@ -79,6 +79,7 @@ void WriteToQueue( Queue_struct *queue , uint32_t *buf, uint8_t CurrentTcbPriori
 {
     memcpy((void *) queue->writePoint, buf, (size_t) queue->NodeSize);
     queue->writePoint += queue->NodeSize;
+    (queue->MessageNumber)++;
 
     if (queue->writePoint >= queue->endPoint) {
         queue->writePoint = queue->startPoint;
@@ -92,12 +93,7 @@ void WriteToQueue( Queue_struct *queue , uint32_t *buf, uint8_t CurrentTcbPriori
         TableRemove(taskHandle,Block);// Also synchronize with the total blocking state
         TableRemove(taskHandle,Delay);
         TableAdd(taskHandle, Ready);
-        if(uxPriority > CurrentTcbPriority){
-            schedule();
-        }
     }
-
-    (queue->MessageNumber)++;
 }
 
 void ExtractFromQueue( Queue_struct *queue, uint32_t *buf, uint8_t CurrentTcbPriority)
@@ -108,6 +104,7 @@ void ExtractFromQueue( Queue_struct *queue, uint32_t *buf, uint8_t CurrentTcbPri
         queue->readPoint = queue->startPoint;
     }
     memcpy( ( void * ) buf, ( void * ) queue->readPoint, ( size_t ) queue->NodeSize );
+    (queue->MessageNumber)--;
 
     if (queue->SendTable != 0) {
         //Wake up the highest priority task in the sending list
@@ -117,12 +114,7 @@ void ExtractFromQueue( Queue_struct *queue, uint32_t *buf, uint8_t CurrentTcbPri
         TableRemove(taskHandle,Block);// Also synchronize with the total blocking state
         TableRemove(taskHandle,Delay);
         TableAdd(taskHandle, Ready);
-        if(uxPriority > CurrentTcbPriority ){
-            schedule();
-        }
     }
-
-    (queue->MessageNumber)--;
 }
 
 
@@ -147,6 +139,7 @@ uint8_t queue_send(Queue_struct *queue, uint32_t *buf, uint32_t Ticks)
             return false;
         }
     }else{
+        ExitCritical(xre);
         return false;
     }
 
@@ -162,6 +155,9 @@ uint8_t queue_send(Queue_struct *queue, uint32_t *buf, uint32_t Ticks)
     while(temp == schedule_count){ }//It loops until the schedule is start.
 
     uint32_t xReturn  = EnterCritical();
+    // 任务被唤醒，有两种情况
+    // 1、SysTick中断触发，即Block延时结束，此时任务state为Block和Delay
+    // 2、ExtractFromQueue中唤醒，此时任务state为Ready
     //Check whether the wake is due to delay or due to semaphore availability
     if( CheckState(CurrentTCB,Block) ){//if true ,the task is Block!
         queue->SendTable &= ~(1 << CurrentTcbPriority);//it belongs to the IPC layer,can't use State port!
