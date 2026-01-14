@@ -227,7 +227,7 @@ void TaskFree(void)
 {
     if (StateTable[Dead]) {
         TaskHandle_t self = TcbTaskTable[FindHighestPriority(StateTable[Dead])];
-        TableRemove(self, Ready);
+        TableRemove(self, Dead);
         TcbTaskTable[self->uxPriority] = NULL;
         heap_free((void *)self->pxStack);
         heap_free((void *)self);
