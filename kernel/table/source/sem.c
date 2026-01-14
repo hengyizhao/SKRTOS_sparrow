@@ -68,10 +68,6 @@ uint8_t semaphore_release( Semaphore_Handle semaphore)
         TableRemove(taskHandle,Block);// Also synchronize with the total blocking state
         TableRemove(taskHandle,Delay);
         TableAdd(taskHandle, Ready);
-        // 这里感觉存在问题，在TableAdd()中，将任务加入Ready表后，如果该任务的优先级大于CurrentTcbPriority，会立即调用schedule()进行任务调度，这里的调度逻辑实际上是不需要的，在互斥锁的实现中就没有此处的代码
-        if(uxPriority > CurrentTcbPriority){
-            schedule();
-        }
     }
     (semaphore->value)++;
 

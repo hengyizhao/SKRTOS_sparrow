@@ -69,7 +69,7 @@ uint32_t * StackInit( uint32_t * pxTopOfStack,
     pxTopOfStack -= 16;
     struct Stack_register *Stack = (struct Stack_register *)pxTopOfStack;
 
-    *Stack = (struct Stack_register) {
+    *Stack = (struct Stack_register) { // 任务栈初始化
         .xPSR = 0x01000000UL,
         .PC = ( ( uint32_t ) pxCode ) & ( ( uint32_t ) 0xfffffffeUL ),
         .LR = ( uint32_t ) ErrorHandle,

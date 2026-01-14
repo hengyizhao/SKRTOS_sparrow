@@ -160,7 +160,7 @@ void ADTTreeInit(void)
 
 
 struct Stack_register {
-    //automatic stacking
+    //manual stacking
     uint32_t r4;
     uint32_t r5;
     uint32_t r6;
@@ -169,7 +169,7 @@ struct Stack_register {
     uint32_t r9;
     uint32_t r10;
     uint32_t r11;
-    //manual stacking
+    //automatic stacking
     uint32_t r0;
     uint32_t r1;
     uint32_t r2;
@@ -420,7 +420,7 @@ void CheckTicks(void)
         WakeTicksTree = OverWakeTicksTree;
         OverWakeTicksTree = temp;
     }
-    
+
     rb_node = rb_first(WakeTicksTree);
     if (rb_node == NULL) {
         schedule();
