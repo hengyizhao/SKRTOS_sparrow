@@ -67,9 +67,6 @@ uint8_t semaphore_release( Semaphore_Handle semaphore)
         TableRemove(taskHandle,Block);// Also synchronize with the total blocking state
         TableRemove(taskHandle,Delay);
         TableAdd(taskHandle, Ready);
-        if(uxPriority > CurrentTcbPriority){
-            schedule();
-        }
     }
     (semaphore->value)++;
 

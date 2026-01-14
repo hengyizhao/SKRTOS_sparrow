@@ -92,9 +92,6 @@ void WriteToQueue( Queue_struct *queue , uint32_t *buf, uint8_t CurrentTcbPriori
         TableRemove(taskHandle,Block);// Also synchronize with the total blocking state
         TableRemove(taskHandle,Delay);
         TableAdd(taskHandle, Ready);
-        if(uxPriority > CurrentTcbPriority){
-            schedule();
-        }
     }
 
     (queue->MessageNumber)++;
@@ -117,9 +114,6 @@ void ExtractFromQueue( Queue_struct *queue, uint32_t *buf, uint8_t CurrentTcbPri
         TableRemove(taskHandle,Block);// Also synchronize with the total blocking state
         TableRemove(taskHandle,Delay);
         TableAdd(taskHandle, Ready);
-        if(uxPriority > CurrentTcbPriority ){
-            schedule();
-        }
     }
 
     (queue->MessageNumber)--;
