@@ -27,7 +27,7 @@
 #include "config.h"
 
 struct Stack_register {
-    //automatic stacking
+    //manual stacking
     uint32_t r4;
     uint32_t r5;
     uint32_t r6;
@@ -36,7 +36,7 @@ struct Stack_register {
     uint32_t r9;
     uint32_t r10;
     uint32_t r11;
-    //manual stacking
+    //automatic stacking
     uint32_t r0;
     uint32_t r1;
     uint32_t r2;
