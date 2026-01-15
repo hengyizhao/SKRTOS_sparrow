@@ -92,7 +92,7 @@ void APP( )
                     1,//优先级
                     &tcbTask1//句柄，需要手动定义
     );
-
+    
 
 }
 
@@ -142,7 +142,7 @@ int main(void)
 ### 任务创建
 
 ```
-void  TaskCreate( TaskFunction_t pxTaskCode,/*需要执行的任务函数,如果传入形参需要在函数前面加上类型转换
+void  TaskCreate( TaskFunction_t pxTaskCode,/*需要执行的任务函数,如果传入形参需要在函数前面加上类型转换				
                   uint16_t usStackDepth,//根据任务中的变量、嵌套层数进行配置，真实大小为该值*4个字节
                   void *pvParameters,//形参，默认为NULL
                   uint32_t uxPriority,//优先级,注意的是不能设置同一优先级
@@ -213,7 +213,7 @@ TaskHandle_t tcbTask3 = NULL;
 void taskA( )
 {
     while (1) {
-
+   
     }
 }
 
@@ -255,8 +255,8 @@ void xExitCritical( uint32_t xReturn );
 ```
 uint32_t  xReturn =  xEnterCritical( void );
 
-a = 1;//可能不止一个任务修改a
-
+a = 1;//可能不止一个任务修改a		
+		
 xExitCritical(xReturn );
 ```
 
@@ -284,9 +284,9 @@ void taskA(void)
 		uint32_t  xReturn =  xEnterCritical( void );
 		void *a = heap_malloc(sizeof(int));
 		xExitCritical(xReturn );
-
+		
 		a = 1;
-
+		
 		uint32_t  xReturn =  xEnterCritical( void );
 		heap_free(a);
 		xExitCritical(xReturn );
@@ -353,7 +353,7 @@ void APP( )
 
 ```
 
-###
+### 
 
 
 
@@ -414,7 +414,7 @@ void taskA( )
     }
 }
 
-void taskB( )
+void taskB( ) 
 {
     struct AMessage xRxedStructure;
     while (1) {
@@ -426,7 +426,7 @@ void taskB( )
 void APP( )
 {
     xStructQueue = vCreateQueues();//创建消息队列
-
+    
     //创建任务taskA,taskB
 }
 
@@ -642,10 +642,10 @@ int main()
 
 ```
 rwlock_handle rwlock_creat(void);//创建
-uint8_t read_acquire(rwlock_handle rwlock_handle1);
-uint8_t read_release(rwlock_handle rwlock_handle1);
-uint8_t write_acquire(rwlock_handle rwlock_handle1);
-uint8_t write_release(rwlock_handle rwlock_handle1);
+void read_acquire(rwlock_handle rwlock_handle1);
+void read_release(rwlock_handle rwlock_handle1);
+void write_acquire(rwlock_handle rwlock_handle1);
+void write_release(rwlock_handle rwlock_handle1);
 void rwlock_delete(rwlock_handle rwlock1);//删除
 ```
 
@@ -654,33 +654,25 @@ void rwlock_delete(rwlock_handle rwlock1);//删除
 ```
 void taskA() {
     // 针对不同情况使用不同的API
-    if(!read_acquire(Oo_buffer1)) { // 读取
-        return;
-    }
+    read_acquire(Oo_buffer1); // 读取
     // 进行读取
     read_release(Oo_buffer1); // 释放，其他任务可以开始读
 }
 
 void taskB() {
-    if(!write_acquire(Oo_buffer1)) { // 开始写
-        return;
-    }
+    write_acquire(Oo_buffer1); // 开始写
     // 进行写操作
     write_release(Oo_buffer1); // 释放，其他任务可以开始写
 }
 
 void taskC() {
-    if(!read_acquire(Oo_buffer1)) { // 读取
-        return;
-    }
+    read_acquire(Oo_buffer1); // 读取
     // 进行读取
     read_release(Oo_buffer1); // 释放，其他任务可以开始读
 }
 
 void taskD() {
-    if(!write_acquire(Oo_buffer1)) { // 开始写
-        return;
-    }
+    write_acquire(Oo_buffer1); // 开始写
     // 进行写操作
     write_release(Oo_buffer1); // 释放，其他任务可以开始写
 }
@@ -694,7 +686,7 @@ int main() {
 	//初始化调度器
     APP(); //创建任务
 	//启动调度器
-
+    
 }
 
 ```
@@ -794,16 +786,16 @@ void APP( )
 
 ```
 void atomic_add( uint32_t i,uint32_t *v)        //不带return版本，i为操作值，v为被操作数的地址
-int atomic_add_return( uint32_t i,uint32_t *v)
+int atomic_add_return( uint32_t i,uint32_t *v)     
 
-void atomic_sub( uint32_t i,uint32_t *v)
-int atomic_sub_return( uint32_t i,uint32_t *v)
+void atomic_sub( uint32_t i,uint32_t *v)        
+int atomic_sub_return( uint32_t i,uint32_t *v)  
 
 atomic_inc_return(v)//自增
 atomic_dec_return(v) //自减
 
 uint32_t atomic_set_return(uint32_t i, uint32_t *v) //设置被操作数的值
-uint32_t atomic_set(uint32_t i, uint32_t *v)
+uint32_t atomic_set(uint32_t i, uint32_t *v) 
 ```
 
 #### 注意

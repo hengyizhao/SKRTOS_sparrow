@@ -61,28 +61,21 @@ rwlock_handle rwlock_creat(void)
     return rwlock1;
 }
 
-uint8_t read_acquire(rwlock_handle rwlock1)
+void read_acquire(rwlock_handle rwlock1)
 {
-    if(!semaphore_take(rwlock1->C_guard, 1)){
-        return false;
-    }
+    semaphore_take(rwlock1->C_guard, 1);
     rwlock1->active_reader += 1;
     if(rwlock1->active_writer == 0){
         rwlock1->reading_reader += 1;
         semaphore_release(rwlock1->read);
     }
     semaphore_release(rwlock1->C_guard);
-    if(!semaphore_take(rwlock1->read, 1)){
-        return false;
-    }
-    return true;
+    semaphore_take(rwlock1->read, 1);
 }
 
-uint8_t read_release(rwlock_handle rwlock1)
+void read_release(rwlock_handle rwlock1)
 {
-    if(!semaphore_take(rwlock1->C_guard, 1)){
-        return false;
-    }
+    semaphore_take(rwlock1->C_guard, 1);
     rwlock1->reading_reader -= 1;
     rwlock1->active_reader -= 1;
     if(rwlock1->reading_reader == 0){
@@ -92,38 +85,28 @@ uint8_t read_release(rwlock_handle rwlock1)
         }
     }
     semaphore_release(rwlock1->C_guard);
-    return true;
 }
 
-uint8_t write_acquire(rwlock_handle rwlock1)
+void write_acquire(rwlock_handle rwlock1)
 {
-    if(!semaphore_take(rwlock1->C_guard, 1)){
-        return false;
-    }
+    semaphore_take(rwlock1->C_guard, 1);
     rwlock1->active_writer += 1;
     if(rwlock1->reading_reader == 0){
         rwlock1->writing_writer += 1;
         semaphore_release(rwlock1->write);
     }
     semaphore_release(rwlock1->C_guard);
-    if(!semaphore_take(rwlock1->write, 1)){
-        return false;
-    }
+    semaphore_take(rwlock1->write, 1);
 
-    if(!semaphore_take(rwlock1->W_guard, 1)){
-        return false;
-    }
-    return true;
+    semaphore_take(rwlock1->W_guard, 1);
 }
 
 
-uint8_t write_release(rwlock_handle rwlock1)
+void write_release(rwlock_handle rwlock1)
 {
     semaphore_release(rwlock1->W_guard);
 
-    if(!semaphore_take(rwlock1->C_guard, 1)){
-        return false;
-    }
+    semaphore_take(rwlock1->C_guard, 1);
     rwlock1->writing_writer -= 1;
     rwlock1->active_writer -= 1;
     if(rwlock1->active_writer == 0){
@@ -133,7 +116,6 @@ uint8_t write_release(rwlock_handle rwlock1)
         }
     }
     semaphore_release(rwlock1->C_guard);
-    return true;
 }
 
 void rwlock_delete(rwlock_handle rwlock1)
