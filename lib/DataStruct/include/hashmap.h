@@ -42,5 +42,6 @@ void hashmap_init(struct hashmap *map, size_t bucket_count, int key_type);
 void hashmap_put(struct hashmap *map, void *key, void *value);
 void *hashmap_get(struct hashmap *map, void *key);
 int hashmap_remove(struct hashmap *map, void *key);
+int hashmap_contains(struct hashmap *map, void *key);
 
 #endif

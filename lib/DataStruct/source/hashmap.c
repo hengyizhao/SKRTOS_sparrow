@@ -110,3 +110,16 @@ int hashmap_remove(struct hashmap *map, void *key)
     }
     return 0;
 }
+
+int hashmap_contains(struct hashmap *map, void *key)
+{
+    struct list_node *bucket = hashmap_bucket(map, key);
+    struct list_node *p;
+
+    for (p = bucket->next; p != bucket; p = p->next) {
+        struct hashmap_entry *e = container_of(p, struct hashmap_entry, node);
+        if (hashmap_key_equal(map, e->key, key))
+            return 1;
+    }
+    return 0;
+}
