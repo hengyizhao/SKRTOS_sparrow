@@ -27,6 +27,7 @@
 #define PCQUEUE_H
 #include "schedule.h"
 
+#define MAX_WAIT_TICKS (0xFFFF)
 
 typedef struct Oo_buffer *Oo_buffer_handle;
 Oo_buffer_handle Oo_buffer_creat(uint8_t buffer_size);
