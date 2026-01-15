@@ -24,7 +24,9 @@
  */
 #ifndef RWLOCK_H
 #define RWLOCK_H
-#include "class.h"
+#include "schedule.h"
+
+#define MAX_WAIT_TICKS (0xFFFF)
 
 typedef struct rwlock *rwlock_handle;
 rwlock_handle rwlock_creat(void);

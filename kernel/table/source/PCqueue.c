@@ -78,6 +78,8 @@ int Oo_remove(Oo_buffer_handle Oo_buffer1)
 
 void Oo_buffer_delete(Oo_buffer_handle Oo_buffer1)
 {
+    semaphore_delete(Oo_buffer1->item);
+    semaphore_delete(Oo_buffer1->space);
     heap_free(Oo_buffer1);
 }
 
@@ -102,7 +104,7 @@ Class(Mo_buffer)
 
 Mo_buffer_handle Mo_buffer_creat(uint8_t buffer_size)
 {
-    Mo_buffer_handle Mo_buffer1 = heap_malloc(sizeof (Oo_buffer) + sizeof(int) * buffer_size);
+    Mo_buffer_handle Mo_buffer1 = heap_malloc(sizeof (Mo_buffer) + sizeof(int) * buffer_size);
     *Mo_buffer1 = (Mo_buffer){
             .in  = 0,
             .out = 0,
@@ -138,6 +140,9 @@ int Mo_remove(Mo_buffer_handle Mo_buffer1)
 
 void Mo_buffer_delete(Mo_buffer_handle Mo_buffer1)
 {
+    semaphore_delete(Mo_buffer1->item);
+    semaphore_delete(Mo_buffer1->space);
+    semaphore_delete(Mo_buffer1->guard);
     heap_free(Mo_buffer1);
 }
 
@@ -163,7 +168,7 @@ Class(Mm_buffer)
 
 Mm_buffer_handle Mm_buffer_creat(uint8_t buffer_size)
 {
-    Mm_buffer_handle Mm_buffer1 = heap_malloc(sizeof (Oo_buffer) + sizeof(int) * buffer_size);
+    Mm_buffer_handle Mm_buffer1 = heap_malloc(sizeof (Mm_buffer) + sizeof(int) * buffer_size);
     *Mm_buffer1 = (Mm_buffer){
             .in  = 0,
             .out = 0,
@@ -203,6 +208,9 @@ int Mm_remove(Mm_buffer_handle Mm_buffer1)
 
 void Mm_buffer_delete(Mm_buffer_handle Mm_buffer1)
 {
+    semaphore_delete(Mm_buffer1->item);
+    semaphore_delete(Mm_buffer1->space);
+    semaphore_delete(Mm_buffer1->guard);
     heap_free(Mm_buffer1);
 }
 

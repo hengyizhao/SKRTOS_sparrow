@@ -61,7 +61,7 @@ Oo_buffer_handle Oo_buffer_creat(uint8_t buffer_size)
 
 void Oo_insert(Oo_buffer_handle Oo_buffer1, int object)
 {
-    semaphore_take(Oo_buffer1->space, 1);
+    while(!semaphore_take(Oo_buffer1->space, MAX_WAIT_TICKS));
     Oo_buffer1->buf[Oo_buffer1->in] =  object;
     Oo_buffer1->in = (Oo_buffer1->in + 1) % Oo_buffer1->size;
     semaphore_release(Oo_buffer1->item);
@@ -69,7 +69,7 @@ void Oo_insert(Oo_buffer_handle Oo_buffer1, int object)
 
 int Oo_remove(Oo_buffer_handle Oo_buffer1)
 {
-    semaphore_take(Oo_buffer1->item, 1);
+    while(!semaphore_take(Oo_buffer1->item, MAX_WAIT_TICKS));
     int item1 = Oo_buffer1->buf[Oo_buffer1->out];
     Oo_buffer1->out = (Oo_buffer1->out + 1) % Oo_buffer1->size;
     semaphore_release(Oo_buffer1->space);
@@ -78,6 +78,8 @@ int Oo_remove(Oo_buffer_handle Oo_buffer1)
 
 void Oo_buffer_delete(Oo_buffer_handle Oo_buffer1)
 {
+    semaphore_delete(Oo_buffer1->item);
+    semaphore_delete(Oo_buffer1->space);
     heap_free(Oo_buffer1);
 }
 
@@ -102,7 +104,7 @@ Class(Mo_buffer)
 
 Mo_buffer_handle Mo_buffer_creat(uint8_t buffer_size)
 {
-    Mo_buffer_handle Mo_buffer1 = heap_malloc(sizeof (Oo_buffer) + sizeof(int) * buffer_size);
+    Mo_buffer_handle Mo_buffer1 = heap_malloc(sizeof (Mo_buffer) + sizeof(int) * buffer_size);
     *Mo_buffer1 = (Mo_buffer){
             .in  = 0,
             .out = 0,
@@ -116,9 +118,9 @@ Mo_buffer_handle Mo_buffer_creat(uint8_t buffer_size)
 
 void Mo_insert(Mo_buffer_handle Mo_buffer1, int object)
 {
-    semaphore_take(Mo_buffer1->space, 1);
+    while(!semaphore_take(Mo_buffer1->space, MAX_WAIT_TICKS));
 
-    semaphore_take(Mo_buffer1->guard, 1);
+    while(!semaphore_take(Mo_buffer1->guard, MAX_WAIT_TICKS));
     Mo_buffer1->buf[Mo_buffer1->in] = object;
     Mo_buffer1->in = (Mo_buffer1->in + 1) % Mo_buffer1->size;
     semaphore_release(Mo_buffer1->guard);
@@ -128,7 +130,7 @@ void Mo_insert(Mo_buffer_handle Mo_buffer1, int object)
 
 int Mo_remove(Mo_buffer_handle Mo_buffer1)
 {
-    semaphore_take(Mo_buffer1->item, 1);
+    while(!semaphore_take(Mo_buffer1->item, MAX_WAIT_TICKS));
     int item1 = Mo_buffer1->buf[Mo_buffer1->out];
     Mo_buffer1->out = (Mo_buffer1->out + 1) % Mo_buffer1->size;
     semaphore_release(Mo_buffer1->space);
@@ -138,6 +140,9 @@ int Mo_remove(Mo_buffer_handle Mo_buffer1)
 
 void Mo_buffer_delete(Mo_buffer_handle Mo_buffer1)
 {
+    semaphore_delete(Mo_buffer1->item);
+    semaphore_delete(Mo_buffer1->space);
+    semaphore_delete(Mo_buffer1->guard);
     heap_free(Mo_buffer1);
 }
 
@@ -163,7 +168,7 @@ Class(Mm_buffer)
 
 Mm_buffer_handle Mm_buffer_creat(uint8_t buffer_size)
 {
-    Mm_buffer_handle Mm_buffer1 = heap_malloc(sizeof (Oo_buffer) + sizeof(int) * buffer_size);
+    Mm_buffer_handle Mm_buffer1 = heap_malloc(sizeof (Mm_buffer) + sizeof(int) * buffer_size);
     *Mm_buffer1 = (Mm_buffer){
             .in  = 0,
             .out = 0,
@@ -177,9 +182,9 @@ Mm_buffer_handle Mm_buffer_creat(uint8_t buffer_size)
 
 void Mm_insert(Mm_buffer_handle Mm_buffer1, int object)
 {
-    semaphore_take(Mm_buffer1->space, 1);
+    while(!semaphore_take(Mm_buffer1->space, MAX_WAIT_TICKS));
 
-    semaphore_take(Mm_buffer1->guard, 1);
+    while(!semaphore_take(Mm_buffer1->guard, MAX_WAIT_TICKS));
     Mm_buffer1->buf[Mm_buffer1->in] =  object;
     Mm_buffer1->in = (Mm_buffer1->in + 1) % Mm_buffer1->size;
     semaphore_release(Mm_buffer1->guard);
@@ -189,9 +194,9 @@ void Mm_insert(Mm_buffer_handle Mm_buffer1, int object)
 
 int Mm_remove(Mm_buffer_handle Mm_buffer1)
 {
-    semaphore_take(Mm_buffer1->item, 1);
+    while(!semaphore_take(Mm_buffer1->item, MAX_WAIT_TICKS));
 
-    semaphore_take(Mm_buffer1->guard, 1);
+    while(!semaphore_take(Mm_buffer1->guard, MAX_WAIT_TICKS));
     int item1 = Mm_buffer1->buf[Mm_buffer1->out];
     Mm_buffer1->out = (Mm_buffer1->out + 1) % Mm_buffer1->size;
     semaphore_release(Mm_buffer1->guard);
@@ -203,6 +208,9 @@ int Mm_remove(Mm_buffer_handle Mm_buffer1)
 
 void Mm_buffer_delete(Mm_buffer_handle Mm_buffer1)
 {
+    semaphore_delete(Mm_buffer1->item);
+    semaphore_delete(Mm_buffer1->space);
+    semaphore_delete(Mm_buffer1->guard);
     heap_free(Mm_buffer1);
 }
 

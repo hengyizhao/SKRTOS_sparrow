@@ -63,19 +63,19 @@ rwlock_handle rwlock_creat(void)
 
 void read_acquire(rwlock_handle rwlock1)
 {
-    semaphore_take(rwlock1->C_guard, 1);
+    while(!semaphore_take(rwlock1->C_guard, MAX_WAIT_TICKS));
     rwlock1->active_reader += 1;
     if(rwlock1->active_writer == 0){
         rwlock1->reading_reader += 1;
         semaphore_release(rwlock1->read);
     }
     semaphore_release(rwlock1->C_guard);
-    semaphore_take(rwlock1->read, 1);
+    while(!semaphore_take(rwlock1->read, MAX_WAIT_TICKS));
 }
 
 void read_release(rwlock_handle rwlock1)
 {
-    semaphore_take(rwlock1->C_guard, 1);
+    while(!semaphore_take(rwlock1->C_guard, MAX_WAIT_TICKS));
     rwlock1->reading_reader -= 1;
     rwlock1->active_reader -= 1;
     if(rwlock1->reading_reader == 0){
@@ -89,16 +89,16 @@ void read_release(rwlock_handle rwlock1)
 
 void write_acquire(rwlock_handle rwlock1)
 {
-    semaphore_take(rwlock1->C_guard, 1);
+    while(!semaphore_take(rwlock1->C_guard, MAX_WAIT_TICKS));
     rwlock1->active_writer += 1;
     if(rwlock1->reading_reader == 0){
         rwlock1->writing_writer += 1;
         semaphore_release(rwlock1->write);
     }
     semaphore_release(rwlock1->C_guard);
-    semaphore_take(rwlock1->write, 1);
+    while(!semaphore_take(rwlock1->write, MAX_WAIT_TICKS));
 
-    semaphore_take(rwlock1->W_guard, 1);
+    while(!semaphore_take(rwlock1->W_guard, MAX_WAIT_TICKS));
 }
 
 
@@ -106,7 +106,7 @@ void write_release(rwlock_handle rwlock1)
 {
     semaphore_release(rwlock1->W_guard);
 
-    semaphore_take(rwlock1->C_guard, 1);
+    while(!semaphore_take(rwlock1->C_guard, MAX_WAIT_TICKS));
     rwlock1->writing_writer -= 1;
     rwlock1->active_writer -= 1;
     if(rwlock1->active_writer == 0){
