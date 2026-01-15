@@ -28,10 +28,10 @@
 
 typedef struct rwlock *rwlock_handle;
 rwlock_handle rwlock_creat(void);
-void read_acquire(rwlock_handle rwlock_handle1);
-void read_release(rwlock_handle rwlock_handle1);
-void write_acquire(rwlock_handle rwlock_handle1);
-void write_release(rwlock_handle rwlock_handle1);
+uint8_t read_acquire(rwlock_handle rwlock_handle1);
+uint8_t read_release(rwlock_handle rwlock_handle1);
+uint8_t write_acquire(rwlock_handle rwlock_handle1);
+uint8_t write_release(rwlock_handle rwlock_handle1);
 void rwlock_delete(rwlock_handle rwlock1);
 
 
