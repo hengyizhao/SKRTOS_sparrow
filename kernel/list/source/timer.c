@@ -46,7 +46,7 @@ extern uint32_t NowTickCount;
 void ClockListAdd(timer_struct *timer)
 {
     uint32_t cpu_lock = xEnterCritical();
-    timer->TimerNode.value = NowTickCount + timer->TimerNode.value;
+    timer->TimerNode.value = NowTickCount + timer->TimerPeriod;
     ListAdd(&ClockList, &timer->TimerNode);
     xExitCritical(cpu_lock);
 }
@@ -105,7 +105,6 @@ timer_struct *TimerCreat(TimerFunction_t CallBackFun, uint32_t period, uint8_t t
             .TimerStopFlag = timer_flag
     };
     ListNodeInit(&(timer->TimerNode));
-    timer->TimerNode.value = NowTickCount + period;
     ClockListAdd(timer);
     return timer;
 }
