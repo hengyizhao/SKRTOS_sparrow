@@ -50,7 +50,7 @@ void ClockTreeAdd(timer_struct *timer)
 }
 
 
-void ClockListRemove(timer_struct *timer)
+void ClockTreeRemove(timer_struct *timer)
 {
     uint32_t cpu_lock = xEnterCritical();
     rb_remove_node(&ClockTree, &timer->TimerNode);
@@ -69,11 +69,11 @@ void timer_check(void)
             next_node = rb_next(node);
             timer_struct *timer = container_of(node, timer_struct, TimerNode);
             timer->CallBackFun(timer);
+
+            ClockTreeRemove(timer);
             if (timer->TimerStopFlag == run) {
-                node->value += timer->TimerPeriod;
-            } else {
-                ClockListRemove(timer);//remove node will be initialized.
-            }
+                ClockTreeAdd(timer);
+            } 
             node = next_node;
         }
 
@@ -138,7 +138,7 @@ uint8_t TimerStop(timer_struct *timer)
  */
 uint8_t TimerStopImmediate(timer_struct *timer)
 {
-    ClockListRemove(timer);
+    ClockTreeRemove(timer);
     return atomic_set_return(stop, (uint32_t *)&(timer->TimerStopFlag));
 }
 

@@ -68,11 +68,11 @@ void timer_check(void)
             next_node = node->next;
             timer_struct *timer = container_of(node, timer_struct, TimerNode);
             timer->CallBackFun(timer);
+
+            ClockListRemove(timer);
             if (timer->TimerStopFlag == run) {
-                node->value += timer->TimerPeriod;
-            } else {
-                ClockListRemove(timer);//remove node will be initialized.
-            }
+                ClockListAdd(timer);
+            } 
             node = next_node;
         }
         TaskDelay(TimerCheckPeriod);
