@@ -90,7 +90,7 @@ void read_release(rwlock_handle rwlock1)
 void write_acquire(rwlock_handle rwlock1)
 {
     semaphore_take(rwlock1->C_guard, 1);
-    rwlock1->active_writer -= 1;
+    rwlock1->active_writer += 1;
     if(rwlock1->reading_reader == 0){
         rwlock1->writing_writer += 1;
         semaphore_release(rwlock1->write);
@@ -120,5 +120,9 @@ void write_release(rwlock_handle rwlock1)
 
 void rwlock_delete(rwlock_handle rwlock1)
 {
+    semaphore_delete(rwlock1->read);
+    semaphore_delete(rwlock1->write);
+    semaphore_delete(rwlock1->W_guard);
+    semaphore_delete(rwlock1->C_guard);
     heap_free(rwlock1);
 }
