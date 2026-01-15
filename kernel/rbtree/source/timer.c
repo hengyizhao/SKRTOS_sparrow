@@ -44,7 +44,7 @@ extern uint32_t NowTickCount;
 void ClockTreeAdd(timer_struct *timer)
 {
     uint32_t cpu_lock = xEnterCritical();
-    timer->TimerNode.value = NowTickCount + period;
+    timer->TimerNode.value = NowTickCount + timer->TimerPeriod;
     rb_Insert_node(&ClockTree, &timer->TimerNode);
     xExitCritical(cpu_lock);
 }
