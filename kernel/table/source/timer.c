@@ -114,7 +114,6 @@ timer_struct *TimerCreat(TimerFunction_t CallBackFun, uint32_t period, uint8_t i
             .TimerStopFlag = timer_flag,
             .Index = index
     };
-    TimerRecordArray[timer->Index] = TicksBase + period;
     TimerTableAdd(timer);
     return timer;
 }
