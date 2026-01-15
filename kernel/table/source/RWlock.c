@@ -120,5 +120,9 @@ void write_release(rwlock_handle rwlock1)
 
 void rwlock_delete(rwlock_handle rwlock1)
 {
+    semaphore_delete(rwlock1->read);
+    semaphore_delete(rwlock1->write);
+    semaphore_delete(rwlock1->W_guard);
+    semaphore_delete(rwlock1->C_guard);
     heap_free(rwlock1);
 }
