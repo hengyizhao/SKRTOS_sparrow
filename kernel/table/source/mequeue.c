@@ -79,6 +79,7 @@ void WriteToQueue( Queue_struct *queue , uint32_t *buf, uint8_t CurrentTcbPriori
 {
     memcpy((void *) queue->writePoint, buf, (size_t) queue->NodeSize);
     queue->writePoint += queue->NodeSize;
+    (queue->MessageNumber)++;
 
     if (queue->writePoint >= queue->endPoint) {
         queue->writePoint = queue->startPoint;
@@ -93,8 +94,6 @@ void WriteToQueue( Queue_struct *queue , uint32_t *buf, uint8_t CurrentTcbPriori
         TableRemove(taskHandle,Delay);
         TableAdd(taskHandle, Ready);
     }
-
-    (queue->MessageNumber)++;
 }
 
 void ExtractFromQueue( Queue_struct *queue, uint32_t *buf, uint8_t CurrentTcbPriority)
@@ -105,6 +104,7 @@ void ExtractFromQueue( Queue_struct *queue, uint32_t *buf, uint8_t CurrentTcbPri
         queue->readPoint = queue->startPoint;
     }
     memcpy( ( void * ) buf, ( void * ) queue->readPoint, ( size_t ) queue->NodeSize );
+    (queue->MessageNumber)--;
 
     if (queue->SendTable != 0) {
         //Wake up the highest priority task in the sending list
@@ -115,8 +115,6 @@ void ExtractFromQueue( Queue_struct *queue, uint32_t *buf, uint8_t CurrentTcbPri
         TableRemove(taskHandle,Delay);
         TableAdd(taskHandle, Ready);
     }
-
-    (queue->MessageNumber)--;
 }
 
 
@@ -141,6 +139,7 @@ uint8_t queue_send(Queue_struct *queue, uint32_t *buf, uint32_t Ticks)
             return false;
         }
     }else{
+        ExitCritical(xre);
         return false;
     }
 
