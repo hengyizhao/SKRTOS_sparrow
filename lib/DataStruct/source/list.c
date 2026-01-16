@@ -123,6 +123,7 @@ uint8_t control(TheList *xList , ListNode *new_node)
 
 void dataflow(uint8_t rt,TheList *xList, ListNode *new_node)
 {
+    // 函数指针数组，
     void (*ListInsert[])(TheList *xList, ListNode *new_node) = {
             InsertFirst,
             InsertHead,
@@ -154,8 +155,6 @@ void RemoveLast( TheList *xList, ListNode *rm_node )
 {
     xList->head = NULL;
     xList->tail = NULL;
-    rm_node->prev = NULL;
-    rm_node->next = NULL;
 
 }
 
@@ -210,11 +209,15 @@ void MoveFlow(uint8_t rt,TheList *xList, ListNode *rm_node)
 
 void ListRemove(TheList *xList, ListNode *rm_node)
 {
-    xList->SaveNode = xList->SaveNode->next;
-    rm_node->TheList = NULL;
     uint8_t op = MoveControl(xList,rm_node);
     MoveFlow(op,xList, rm_node);
+    rm_node->TheList = NULL;
+    rm_node->prev = NULL;
+    rm_node->next = NULL;
     xList->count -= 1;
+    if(xList->count != 0 && xList->SaveNode == rm_node) {
+        xList->SaveNode = xList->SaveNode->next;
+    }
 }
 
 
