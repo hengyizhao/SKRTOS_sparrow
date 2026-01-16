@@ -51,13 +51,13 @@ static const size_t HeapStructSize = (sizeof(heap_node) + (size_t)(alignment_byt
 void heap_init( void )
 {
     heap_node *first_node;
-    uint32_t start_heap ,end_heap;
+    PTR_SIZE start_heap ,end_heap;
     //get start address
-    start_heap =(uint32_t) AllHeap;
+    start_heap =(PTR_SIZE) AllHeap;
     if( (start_heap & alignment_byte) != 0){
         start_heap += alignment_byte ;
         start_heap &= ~alignment_byte;
-        TheHeap.AllSize -=  (size_t)(start_heap - (uint32_t)AllHeap);//byte alignment means move to high address,so sub it!
+        TheHeap.AllSize -=  (size_t)(start_heap - (PTR_SIZE)AllHeap);//byte alignment means move to high address,so sub it!
     }
     TheHeap.head.next = (heap_node *)start_heap;
     TheHeap.head.BlockSize = (size_t)0;
@@ -83,12 +83,12 @@ void *heap_malloc(size_t WantSize)
     void *xReturn = NULL;
     WantSize += HeapStructSize;
     if((WantSize & alignment_byte) != 0x00) {
-        alignment_require_size = (alignment_byte + 1) - (WantSize & alignment_byte);//must 8-byte alignment
+        alignment_require_size = (alignment_byte + 1) - (WantSize & alignment_byte);
         WantSize += alignment_require_size;
-    }//You can add the TaskSuspend function ,that make here be an atomic operation
+    }
     if(TheHeap.tail== NULL ) {
         heap_init();
-    }//Resume
+    }
     prev_node = &TheHeap.head;
     use_node = TheHeap.head.next;
     while((use_node->BlockSize) < WantSize) {//check the size is fit

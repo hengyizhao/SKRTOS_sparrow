@@ -27,6 +27,9 @@
 #define HEAP_H
 #include "schedule.h"
 
+
+#define PTR_SIZE uint32_t
+
 void *heap_malloc(size_t WantSize);
 void heap_free(void *xReturn);
 
