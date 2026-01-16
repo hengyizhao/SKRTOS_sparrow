@@ -29,13 +29,13 @@
 
 Class(heap_node){
         heap_node *next;
-        size_t BlockSize;
+        size_t BlockSize; // 该节点所管理的内存块的大小，包括节点头所占字节以及实际数据的大小
 };
 
-Class(xheap){
+Class(xheap){   // 头结点
         heap_node head;
         heap_node *tail;
-        size_t AllSize;
+        size_t AllSize; // 堆中的可用空间大小
 };
 
 static xheap TheHeap = {
@@ -44,7 +44,7 @@ static xheap TheHeap = {
 };
 
 static  uint8_t AllHeap[config_heap];
-static const size_t HeapStructSize = (sizeof(heap_node) + (size_t)(alignment_byte)) &~(alignment_byte);
+static const size_t HeapStructSize = (sizeof(heap_node) + (size_t)(alignment_byte)) &~(alignment_byte); // heap_node占用的字节数，并确保其地址对齐
 
 
 
@@ -53,17 +53,17 @@ void heap_init( void )
     heap_node *first_node;
     uint32_t start_heap ,end_heap;
     //get start address
-    start_heap =(uint32_t) AllHeap;
+    start_heap =(uint32_t) AllHeap; // 这里将指针定义为uint32_t类型，说明它是一个32位的地址，即当前的代码只支持32位系统
     if( (start_heap & alignment_byte) != 0){
         start_heap += alignment_byte ;
-        start_heap &= ~alignment_byte;
+        start_heap &= ~alignment_byte; // 分配的内存块的起始地址进行字节对齐
         TheHeap.AllSize -=  (size_t)(start_heap - (uint32_t)AllHeap);//byte alignment means move to high address,so sub it!
     }
     TheHeap.head.next = (heap_node *)start_heap;
     TheHeap.head.BlockSize = (size_t)0;
     end_heap = start_heap + (uint32_t)TheHeap.AllSize - (uint32_t)HeapStructSize;
     if( (end_heap & alignment_byte) != 0){
-        end_heap &= ~alignment_byte;
+        end_heap &= ~alignment_byte; // 尾节点地址进行字节对齐
         TheHeap.AllSize =  (size_t)(end_heap - start_heap );
     }
     TheHeap.tail = (heap_node *)end_heap;
@@ -71,7 +71,7 @@ void heap_init( void )
     TheHeap.tail->next =NULL;
     first_node = (heap_node *)start_heap;
     first_node->next = TheHeap.tail;
-    first_node->BlockSize = TheHeap.AllSize;
+    first_node->BlockSize = TheHeap.AllSize; // 第一个节点的大小为整个堆的大小
 }
 
 void *heap_malloc(size_t WantSize)
@@ -81,11 +81,11 @@ void *heap_malloc(size_t WantSize)
     heap_node *new_node;
     size_t alignment_require_size;
     void *xReturn = NULL;
-    WantSize += HeapStructSize;
+    WantSize += HeapStructSize; // 是包括节点头在内的总大小
     if((WantSize & alignment_byte) != 0x00) {
         alignment_require_size = (alignment_byte + 1) - (WantSize & alignment_byte);//must 8-byte alignment
         WantSize += alignment_require_size;
-    }//You can add the TaskSuspend function ,that make here be an atomic operation
+    }//You can add the SchedulerSusPend function ,that make here be an atomic operation
     if(TheHeap.tail== NULL ) {
         heap_init();
     }//Resume
@@ -116,7 +116,7 @@ static void InsertFreeBlock(heap_node* xInsertBlock);
 void heap_free(void *xReturn)
 {
     heap_node *xlink;
-    uint8_t *xFree = (uint8_t*)xReturn;
+    uint8_t *xFree = (uint8_t*)xReturn; // 获取要释放的内存块的数据起始地址，实际要释放的还包括节点头所占的字节
 
     xFree -= HeapStructSize;//get the start address of the heap struct
     xlink = (void*)xFree;
