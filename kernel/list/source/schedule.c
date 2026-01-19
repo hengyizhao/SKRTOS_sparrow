@@ -27,14 +27,15 @@
 #include <memory.h>
 #include "schedule.h"
 #include "heap.h"
+#include "list.h"
 #include "port.h"
 
 
 Class(TCB_t)
 {
     volatile uint32_t *pxTopOfStack;
-    ListNode task_node;
-    ListNode IPC_node;
+    ListNode task_node; // 其value用于存储为该任务设置的时间片，即TimeSlice
+    ListNode IPC_node; // 其value用于存储为该任务设置的优先级
     uint8_t state;
     uint8_t uxPriority;
     uint32_t * pxStack;
@@ -51,7 +52,7 @@ __attribute__( ( always_inline ) ) inline TaskHandle_t GetCurrentTCB(void)
 
 __attribute__( ( always_inline ) ) inline TaskHandle_t TaskHighestPriorityTask(TheList *xlist)
 {
-    return container_of(xlist->tail, TCB_t, task_node);
+    return container_of(xlist->tail, TCB_t, task_node); // 因为优先级数值越大，表示优先级越高，所以这里使用的是xlist->tail来获取优先级最高的任务
 }
 
 __attribute__( ( always_inline ) ) inline TaskHandle_t IPCHighestPriorityTask(TheList *xlist)
@@ -66,7 +67,7 @@ uint8_t GetTaskPriority(TaskHandle_t taskHandle)
 
 
 
-TheList ReadyListArray[configMaxPriority];
+TheList ReadyListArray[configMaxPriority]; // 每个优先级分配一个ReadyList，其SaceNode用于存储同优先级时间片轮转的任务，SwitchFlag用于存储时间片轮转的计时值
 TheList OneDelayList;
 TheList TwoDelayList;
 TheList *WakeTicksList;
@@ -78,13 +79,13 @@ TheList SuspendList;
 TheList BlockList;
 TheList DeleteList;
 
-void ReadyListInit( void )
+static void ReadyListInit( void )
 {
-    uint8_t i = configMaxPriority - 1;
-    while( i != 0)
+    uint8_t i = 0;
+    while( i < configMaxPriority)
     {
         ListInit(&(ReadyListArray[i]));
-        i--;
+        i++;
     }
 }
 
@@ -156,10 +157,14 @@ void Remove_IPC(TaskHandle_t self)
 static uint8_t ListHighestPriorityTask(void)
 {
     uint8_t i = configMaxPriority - 1;
-    while(ReadyListArray[i].count == 0){
+    // 这里没有对i的值进行判断，因为默认至少任务列表中中包括空闲任务的，其不会出现i一直递减，导致无符号整型溢出的风险
+    while(i > 0) {
+        if (ReadyListArray[i].count > 0) {
+            return i;
+        }
         i--;
     }
-    return i;
+    return 0;
 }
 
 
@@ -168,6 +173,7 @@ void ADTListInit(void)
     ReadyListInit();
     ListInit( &SuspendList );
     ListInit( &BlockList );
+    ListInit( &DeleteList );
 }
 
 __attribute__((always_inline)) inline void StateSet( TaskHandle_t taskHandle,uint8_t State)
@@ -187,6 +193,9 @@ __attribute__((always_inline)) inline uint8_t CheckTaskState( TaskHandle_t taskH
 
 
 uint8_t volatile schedule_PendSV = 0;
+// TaskSwitchContext()的调用一处是在SchedulerStart()调度器启动，一处是在PendSV_Handler()的中断处理程序中
+// 在schedulerStart()调度器启动的时候调用TaskSwitchContext()不需要考虑多任务的同步
+// 在PendSV_Handler()的中断处理程序中，进行了中断的屏蔽，所以TaskSwitchContext()中不需要做相关的任务互斥同步逻辑
 void TaskSwitchContext(void)
 {
     uint8_t Index= ListHighestPriorityTask();
@@ -207,9 +216,9 @@ void RecordWakeTime(uint16_t ticks)
 {
     const uint32_t constTicks = NowTickCount;
     TCB_t *self = schedule_currentTCB;
-    self->task_node.value = constTicks + ticks;
+    const uint32_t wakeTime = constTicks + ticks;
 
-    if(self->task_node.value < constTicks) {
+    if(wakeTime < constTicks) {
         ListAdd(OverWakeTicksList, &(self->task_node));
     } else {
         ListAdd(WakeTicksList, &(self->task_node));
@@ -244,6 +253,8 @@ void TaskCreate( TaskFunction_t pxTaskCode,
         .TimeSlice = TimeSlice,
         .pxStack = pxStack
     };
+    ListNodeInit(&NewTcb->task_node);
+    ListNodeInit(&NewTcb->IPC_node);
     topStack =  NewTcb->pxStack + (usStackDepth - (uint32_t)1) ;
     topStack = ( uint32_t *) (((uint32_t)topStack) & (~((uint32_t) alignment_byte)));
     NewTcb->pxTopOfStack = pxPortInitialiseStack(topStack,pxTaskCode,pvParameters);
@@ -294,7 +305,7 @@ void LeisureTaskCreat(void)
                     NULL,
                     0,
                     &leisureTcb,
-                    0
+                    0 // 空闲任务的时间片设置为0，也是可以调度到的，TaskSwitchContext()中，如果优先级0中的其他任务switchFlag<0之后就会调度到空闲任务，即使优先级0只有空闲任务，每次也是可以调度到空闲任务的
     );
 }
 
@@ -308,7 +319,7 @@ void SchedulerInit(void)
 
 __attribute__( ( always_inline ) )  inline void SchedulerStart( void )
 {
-    TaskSwitchContext();
+    TaskSwitchContext(); // 在调度器启动时，执行TaskSwitchContext()后，schedule_PendSV = 1， schedule_currentTCB = 空闲任务
     StartFirstTask();
 }
 
@@ -337,5 +348,5 @@ void CheckTicks(void)
         TaskListAdd(self, Ready);
     }
 
-    schedule();
+    schedule(); // 触发PendSV中断
 }
