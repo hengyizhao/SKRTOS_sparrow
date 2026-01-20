@@ -27,6 +27,7 @@
 #include <memory.h>
 #include "schedule.h"
 #include "heap.h"
+#include "list.h"
 #include "port.h"
 
 
@@ -78,13 +79,13 @@ TheList SuspendList;
 TheList BlockList;
 TheList DeleteList;
 
-void ReadyListInit( void )
+static void ReadyListInit( void )
 {
-    uint8_t i = configMaxPriority - 1;
-    while( i != 0)
+    uint8_t i = 0;
+    while( i < configMaxPriority)
     {
         ListInit(&(ReadyListArray[i]));
-        i--;
+        i++;
     }
 }
 
@@ -156,10 +157,13 @@ void Remove_IPC(TaskHandle_t self)
 static uint8_t ListHighestPriorityTask(void)
 {
     uint8_t i = configMaxPriority - 1;
-    while(ReadyListArray[i].count == 0){
+    while(i > 0) {
+        if (ReadyListArray[i].count > 0) {
+            return i;
+        }
         i--;
     }
-    return i;
+    return 0;
 }
 
 
@@ -168,6 +172,7 @@ void ADTListInit(void)
     ReadyListInit();
     ListInit( &SuspendList );
     ListInit( &BlockList );
+    ListInit( &DeleteList );
 }
 
 __attribute__((always_inline)) inline void StateSet( TaskHandle_t taskHandle,uint8_t State)
@@ -207,9 +212,9 @@ void RecordWakeTime(uint16_t ticks)
 {
     const uint32_t constTicks = NowTickCount;
     TCB_t *self = schedule_currentTCB;
-    self->task_node.value = constTicks + ticks;
+    const uint32_t wakeTime = constTicks + ticks;
 
-    if(self->task_node.value < constTicks) {
+    if(wakeTime < constTicks) {
         ListAdd(OverWakeTicksList, &(self->task_node));
     } else {
         ListAdd(WakeTicksList, &(self->task_node));
@@ -244,6 +249,8 @@ void TaskCreate( TaskFunction_t pxTaskCode,
         .TimeSlice = TimeSlice,
         .pxStack = pxStack
     };
+    ListNodeInit(&NewTcb->task_node);
+    ListNodeInit(&NewTcb->IPC_node);
     topStack =  NewTcb->pxStack + (usStackDepth - (uint32_t)1) ;
     topStack = ( uint32_t *) (((uint32_t)topStack) & (~((uint32_t) alignment_byte)));
     NewTcb->pxTopOfStack = pxPortInitialiseStack(topStack,pxTaskCode,pvParameters);
